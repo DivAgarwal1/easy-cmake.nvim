@@ -82,7 +82,7 @@ M.install = function()
 	vim.fn.system(undocd_cmd)
 end
 
-M.setup = function()
+M.setup = function(opts)
 	vim.api.nvim_create_user_command("CMakeGenerate", M.generate, {})
 	vim.api.nvim_create_user_command("CMakeBuild", M.build, {})
 	vim.api.nvim_create_user_command("CMakeInstall", M.install, {})
