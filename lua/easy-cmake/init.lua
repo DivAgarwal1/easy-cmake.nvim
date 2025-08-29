@@ -1,7 +1,13 @@
 local M = {}
 
-parseConfigFile = function(file)
-	local config_table = vim.json.decode(file)
+local parseConfigFile = function(file)
+	local config_table
+	if vim.fn.filereadable(file) == 1 then
+		config_table = vim.json.decode(table.concat(vim.fn.readfile(file), "\n"))
+	else
+		config_table = {}
+	end
+
 	local cmake_configs = {}
 
 	if config_table.cmakeExe then
@@ -31,23 +37,20 @@ parseConfigFile = function(file)
 	return cmake_configs
 end
 
-getConfigFile = function()
-	return "./easy-cmake/config.json"
+local getConfigFile = function()
+	return "./.easy-cmake/config.json"
 end
 
 M.generate = function()
 	local cmake_configs = parseConfigFile(getConfigFile())
-	local cmd = ""
 
-	cmd = cmd .. cmake_configs.exe
+	local cmd = string.format('"%s" -G "%s"', cmake_configs.exe, cmake_configs.generator)
 
-	cmd = cmd .. " -G " .. cmake_configs.generator
-
-	for index, value in ipairs(cmake_configs.variables) do
-		cmd = cmd .. " -D " .. value
+	for key, value in pairs(cmake_configs.variables) do
+		cmd = cmd .. string.format(" -D%s=%s", key, value)
 	end
 
-	cmd = cmd .. " -B" .. cmake_configs.build
+	cmd = cmd .. string.format(' -B "%s"', cmake_configs.build)
 
 	print(vim.fn.system(cmd))
 end
@@ -55,31 +58,17 @@ end
 M.build = function()
 	local cmake_config = parseConfigFile(getConfigFile())
 
-	local cd_cmd = "cd " .. cmake_config.build
-	local undocd_cmd = "cd " .. " .."
+	local cmd = string.format('"%s" --build "%s"', cmake_config.exe, cmake_config.build)
 
-	local cmd = ""
-	cmd = cmd .. cmake_config.exe
-	cmd = cmd .. " --build ."
-
-	vim.fn.system(cd_cmd)
 	print(vim.fn.system(cmd))
-	vim.fn.system(undocd_cmd)
 end
 
 M.install = function()
 	local cmake_config = parseConfigFile(getConfigFile())
 
-	local cd_cmd = "cd " .. cmake_config.build
-	local undocd_cmd = "cd " .. " .."
+	local cmd = string.format('"%s" --install "%s"', cmake_config.exe, cmake_config.build)
 
-	local cmd = ""
-	cmd = cmd .. cmake_config.exe
-	cmd = cmd .. " --install ."
-
-	vim.fn.system(cd_cmd)
 	print(vim.fn.system(cmd))
-	vim.fn.system(undocd_cmd)
 end
 
 M.setup = function(opts)
